@@ -61,6 +61,19 @@ def get_browser_path() -> str | None:
         for path in candidates:
             if Path(path).exists():
                 return path
+    else:
+        # Linux: look up common executables on PATH
+        for name in (
+            "microsoft-edge",
+            "microsoft-edge-stable",
+            "google-chrome",
+            "google-chrome-stable",
+            "chromium",
+            "chromium-browser",
+        ):
+            found = shutil.which(name)
+            if found:
+                return found
     return None
 
 
@@ -124,6 +137,7 @@ def launch_browser(port: int = CDP_DEFAULT_PORT, profile_dir: str | None = None)
         "--disable-extensions",
         "--remote-allow-origins=*",
         f"--user-data-dir={profile_dir}",
+        CHATGPT_URL,
     ]
 
     try:
