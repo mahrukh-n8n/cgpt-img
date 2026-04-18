@@ -12,6 +12,7 @@ from rich.table import Table
 
 from chatgpt_img_mcp import __version__
 from chatgpt_img_mcp.core.chatgpt import ChatGPTBrowser
+from chatgpt_img_mcp.install import CONFIG_PATHS, SKILL_TARGETS, install_skill, register_mcp
 from chatgpt_img_mcp.utils import (
     CDP_DEFAULT_PORT,
     CHATGPT_URL,
@@ -447,6 +448,58 @@ def text(port: int = typer.Option(None, "--port", "-P", help="CDP port")):
 def version():
     """Show version information."""
     console.print(f"[bold]ChatGPT Image MCP v{__version__}[/bold]")
+
+
+setup_app = typer.Typer(help="Register cgpt-mcp with AI tools (Claude Code, Claude Desktop, Cursor).")
+skill_app = typer.Typer(help="Install the Claude Code skill that uses cgpt.")
+app.add_typer(setup_app, name="setup")
+app.add_typer(skill_app, name="skill")
+
+
+@setup_app.command("add")
+def setup_add(
+    target: str = typer.Argument(
+        ...,
+        help=f"Target: {', '.join(list(CONFIG_PATHS) + ['json'])}",
+    ),
+):
+    """Register the chatgpt-img MCP server with an AI tool."""
+    ok, msg = register_mcp(target)
+    if target == "json":
+        console.print(msg)
+        return
+    if ok:
+        console.print(f"[green]{msg}[/green]")
+        console.print("[dim]Restart the AI tool to pick up the new server.[/dim]")
+    else:
+        console.print(f"[red]{msg}[/red]")
+        raise typer.Exit(1)
+
+
+@setup_app.command("list")
+def setup_list():
+    """Show detected config paths for each supported target."""
+    table = Table(title="MCP Config Targets")
+    table.add_column("Target", style="cyan")
+    table.add_column("Config path")
+    table.add_column("Exists", style="dim")
+    for name, path_fn in CONFIG_PATHS.items():
+        p = path_fn()
+        table.add_row(name, str(p), "yes" if p.exists() else "no")
+    console.print(table)
+
+
+@skill_app.command("install")
+def skill_install(
+    target: str = typer.Argument("claude-code", help=f"Target: {', '.join(SKILL_TARGETS)}"),
+):
+    """Install the bundled Claude skill into the target's skills directory."""
+    ok, msg = install_skill(target)
+    if ok:
+        console.print(f"[green]{msg}[/green]")
+    else:
+        console.print(f"[red]{msg}[/red]")
+        raise typer.Exit(1)
 
 
 def main():
