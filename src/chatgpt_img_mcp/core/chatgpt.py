@@ -488,21 +488,25 @@ class ChatGPTBrowser:
         self.ensure_main_view()
         self._wait(0.5)
 
+        # Snapshot existing images so we can detect only NEW ones
+        existing_srcs = {img["src"] for img in self.find_generated_images()}
+
         # Send the image generation prompt
         result = self.send_message(prompt, wait_for_response=True, timeout=wait_for)
         if result.get("status") == "error":
             return result
 
-        # Wait for images to appear
+        # Wait for NEW images (not present before the prompt) to appear
         start = time.time()
         while time.time() - start < 60:
-            images = self.find_generated_images()
-            if images:
+            all_images = self.find_generated_images()
+            new_images = [img for img in all_images if img["src"] not in existing_srcs]
+            if new_images:
                 return {
                     "status": "success",
                     "response": result.get("response", ""),
-                    "images": images,
-                    "count": len(images),
+                    "images": new_images,
+                    "count": len(new_images),
                 }
             time.sleep(1)
 
