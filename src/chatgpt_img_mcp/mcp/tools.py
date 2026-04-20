@@ -428,7 +428,7 @@ def download_image(image_index: int = 0) -> dict[str, Any]:
     if image_index >= len(images):
         return {"status": "error", "error": f"Image index {image_index} out of range (found {len(images)} images)"}
 
-    if not browser.click_image_to_zoom():
+    if not browser.click_image_to_zoom(image_index):
         return {"status": "error", "error": "Failed to click image"}
 
     time.sleep(2)

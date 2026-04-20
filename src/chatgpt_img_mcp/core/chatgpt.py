@@ -402,30 +402,33 @@ class ChatGPTBrowser:
                 return []
         return []
 
-    def click_image_to_zoom(self) -> bool:
+    def click_image_to_zoom(self, image_index: int = 0) -> bool:
         """Click on a generated image to open the zoom/lightbox view."""
-        script = """
-        (function() {
+        script = f"""
+        (function() {{
+            var idx = {image_index};
             // Try clicking the imagegen container (role=button)
             var containers = document.querySelectorAll('[id^="image-"]');
-            for (var i = 0; i < containers.length; i++) {
+            var clicked = 0;
+            for (var i = 0; i < containers.length; i++) {{
                 var btn = containers[i].querySelector('[role=button]');
-                if (btn) {
-                    btn.click();
-                    return true;
-                }
-            }
+                if (btn) {{
+                    if (clicked === idx) {{ btn.click(); return true; }}
+                    clicked++;
+                }}
+            }}
             // Fallback: click large estuary images directly
             var imgs = document.querySelectorAll("img[src*='estuary']");
-            for (var i = 0; i < imgs.length; i++) {
+            var seen = 0;
+            for (var i = 0; i < imgs.length; i++) {{
                 var r = imgs[i].getBoundingClientRect();
-                if (r.width > 100) {
-                    imgs[i].click();
-                    return true;
-                }
-            }
+                if (r.width > 100) {{
+                    if (seen === idx) {{ imgs[i].click(); return true; }}
+                    seen++;
+                }}
+            }}
             return false;
-        })()
+        }})()
         """
         return self._evaluate(script) is True
 

@@ -292,7 +292,7 @@ def download(
     else:
         # Method 2: Click zoom + Save button
         console.print("[yellow]Direct fetch failed. Trying zoom + save button...[/yellow]")
-        if browser.click_image_to_zoom():
+        if browser.click_image_to_zoom(index):
             time.sleep(2)
             if browser.click_download_button():
                 time.sleep(2)
