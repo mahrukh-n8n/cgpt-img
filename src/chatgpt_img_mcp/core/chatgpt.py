@@ -253,7 +253,14 @@ class ChatGPTBrowser:
                 if (imgContainers.length > 0) hasLargeImage = true;
 
                 var hasContent = fiberText.length > 0 || hasLargeImage;
-                var done = !busy && hasContent;
+
+                // Detect transient states: "Analyzing" or "Analysis paused"
+                // These appear with aria-busy=false but image is not ready yet.
+                var allText = last.innerText || '';
+                var isAnalyzing = /analyzing/i.test(allText) && !hasLargeImage;
+                var isPaused = /analysis paused/i.test(allText) && !hasLargeImage;
+
+                var done = !busy && hasContent && !isAnalyzing && !isPaused;
 
                 return JSON.stringify({
                     done: done,
@@ -262,7 +269,9 @@ class ChatGPTBrowser:
                     hasImages: hasLargeImage,
                     imgCount: imgs.length,
                     numTurns: turns.length,
-                    busy: !!busy
+                    busy: !!busy,
+                    isAnalyzing: isAnalyzing,
+                    isPaused: isPaused
                 });
             })()
             """)
@@ -499,9 +508,10 @@ class ChatGPTBrowser:
         if result.get("status") == "error":
             return result
 
-        # Wait for NEW images (not present before the prompt) to appear
+        # Wait for NEW images (not present before the prompt) to appear.
+        # Use a longer timeout to account for "Analyzing" and "Analysis paused" states.
         start = time.time()
-        while time.time() - start < 60:
+        while time.time() - start < 180:
             all_images = self.find_generated_images()
             new_images = [img for img in all_images if img["src"] not in existing_srcs]
             if new_images:

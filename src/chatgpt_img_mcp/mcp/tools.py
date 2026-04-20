@@ -219,7 +219,7 @@ def generate_image(
     reference_images: list[str] | None = None,
     reference_urls: list[str] | None = None,
     model: str | None = None,
-    wait_timeout: int = 120,
+    wait_timeout: int = 300,
 ) -> dict[str, Any]:
     """Generate an image using ChatGPT.
 
@@ -228,7 +228,7 @@ def generate_image(
         reference_images: Local file paths of reference images
         reference_urls: URLs of reference images
         model: Optional model to select (e.g., "DALL-E", "GPT-4o")
-        wait_timeout: Timeout in seconds (default: 120)
+        wait_timeout: Timeout in seconds (default: 300, increased for "Analyzing" states)
 
     Returns:
         Generated image info or status.
@@ -260,8 +260,8 @@ def generate_image(
     if result.get("status") == "error":
         return result
 
-    # Wait for images to appear
-    for _attempt in range(30):
+    # Wait for images to appear (extended for "Analyzing"/"Analysis paused" states)
+    for _attempt in range(90):
         time.sleep(2)
         images = browser.find_generated_images()
         if images:
